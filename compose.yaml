@@ -1,0 +1,30 @@
+services:
+  mysql:
+    image: mysql:8
+    platform: linux/amd64
+    container_name: mysql
+    environment:
+      TZ: Asia/Tokyo
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: test
+    command: mysqld
+    healthcheck:
+        test: mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD
+        start_period: 60s
+        interval: 1s
+    volumes:
+      - ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - db_network
+
+networks:
+  db_network:
+
+volumes:
+  mysql_data:
+    driver: local
