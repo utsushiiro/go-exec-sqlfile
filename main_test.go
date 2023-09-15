@@ -14,11 +14,6 @@ import (
 	_ "github.com/pingcap/tidb/parser/test_driver"
 )
 
-//go:embed db/initdb.d/*
-var sqlDir embed.FS
-
-var p *parser.Parser = parser.New()
-
 func TestMain(m *testing.M) {
 	InitDB()
 	m.Run()
@@ -28,31 +23,6 @@ func TestMain(m *testing.M) {
 func ResetAllTables() {
 	TruncateAllTables()
 	SeedDB()
-}
-
-func SeedDB() {
-	seedSQL, err := sqlDir.ReadFile("db/initdb.d/02_seed.sql")
-	if err != nil {
-		log.Fatalf("failed to read seed sql file: %v", err)
-	}
-
-	stmts, _, err := p.Parse(string(seedSQL), "", "")
-	if err != nil {
-		log.Fatalf("failed to parse seed sql: %v", err)
-	}
-
-	sqls := []string{}
-	for _, stmt := range stmts {
-		var buf bytes.Buffer
-		stmt.Restore(format.NewRestoreCtx(format.DefaultRestoreFlags, &buf))
-		sqls = append(sqls, buf.String())
-	}
-
-	for _, sql := range sqls {
-		if _, err := db.Exec(sql); err != nil {
-			log.Fatalf("failed to execute sql: err=%v, sql=%s", err, sql)
-		}
-	}
 }
 
 func TruncateAllTables() {
@@ -84,6 +54,36 @@ func TruncateAllTables() {
 
 	if rows.Err() != nil {
 		log.Fatalf("failed to iterate show tables results: %v", rows.Err())
+	}
+}
+
+//go:embed db/initdb.d/*
+var sqlDir embed.FS
+
+var p *parser.Parser = parser.New()
+
+func SeedDB() {
+	seedSQL, err := sqlDir.ReadFile("db/initdb.d/02_seed.sql")
+	if err != nil {
+		log.Fatalf("failed to read seed sql file: %v", err)
+	}
+
+	stmts, _, err := p.Parse(string(seedSQL), "", "")
+	if err != nil {
+		log.Fatalf("failed to parse seed sql: %v", err)
+	}
+
+	sqls := []string{}
+	for _, stmt := range stmts {
+		var buf bytes.Buffer
+		stmt.Restore(format.NewRestoreCtx(format.DefaultRestoreFlags, &buf))
+		sqls = append(sqls, buf.String())
+	}
+
+	for _, sql := range sqls {
+		if _, err := db.Exec(sql); err != nil {
+			log.Fatalf("failed to execute sql: err=%v, sql=%s", err, sql)
+		}
 	}
 }
 
