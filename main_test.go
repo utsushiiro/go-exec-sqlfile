@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 
 func ResetAllTables() {
 	TruncateAllTables()
-	SeedDB()
+	SeedTables()
 }
 
 func TruncateAllTables() {
@@ -39,14 +39,14 @@ func TruncateAllTables() {
 			log.Fatalf("failed to show tables: %v", err)
 		}
 
-		queries := []string{
+		sqls := []string{
 			"SET FOREIGN_KEY_CHECKS = 0",
 			fmt.Sprintf("TRUNCATE `%s`", tableName),
 			"SET FOREIGN_KEY_CHECKS = 1",
 		}
 
-		for _, q := range queries {
-			if _, err := db.Exec(q); err != nil {
+		for _, sql := range sqls {
+			if _, err := db.Exec(sql); err != nil {
 				log.Fatalf("failed to truncate table: %#v", err)
 			}
 		}
@@ -62,7 +62,7 @@ var sqlDir embed.FS
 
 var p *parser.Parser = parser.New()
 
-func SeedDB() {
+func SeedTables() {
 	seedSQL, err := sqlDir.ReadFile("db/initdb.d/02_seed.sql")
 	if err != nil {
 		log.Fatalf("failed to read seed sql file: %v", err)
