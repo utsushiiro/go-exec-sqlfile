@@ -88,6 +88,8 @@ func SeedDB() {
 }
 
 func TestResetAllTables(t *testing.T) {
+	ResetAllTables()
+
 	want := []Post{
 		{ID: 1, AuthorID: 1, Content: "Hello, world!"},
 		{ID: 2, AuthorID: 1, Content: "(;_;)"},
@@ -99,10 +101,12 @@ func TestResetAllTables(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("mismatch detected (-want +got):\n%s", diff)
 	}
 
+	db.Exec("insert into posts (id, author_id, content) values (5, 2, 'This record does not exist in seed.');")
 	ResetAllTables()
 
 	got, err = AllPosts(context.Background())
