@@ -74,14 +74,13 @@ func SeedTables() {
 		log.Fatalf("failed to parse seed sql: %v", err)
 	}
 
-	sqls := []string{}
+	var buf bytes.Buffer
 	for _, stmt := range stmts {
-		var buf bytes.Buffer
-		stmt.Restore(format.NewRestoreCtx(format.DefaultRestoreFlags, &buf))
-		sqls = append(sqls, buf.String())
-	}
+		buf.Reset()
 
-	for _, sql := range sqls {
+		stmt.Restore(format.NewRestoreCtx(format.DefaultRestoreFlags, &buf))
+
+		sql := buf.String()
 		if _, err := db.Exec(sql); err != nil {
 			log.Fatalf("failed to execute sql: err=%v, sql=%s", err, sql)
 		}
