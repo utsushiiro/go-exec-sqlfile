@@ -32,6 +32,10 @@ func TruncateAllTables() {
 	}
 	defer rows.Close()
 
+	if _, err := db.Exec("set foreign_key_checks = 0"); err != nil {
+		log.Fatalf("failed to disable foreign_key_checks: %v", err)
+	}
+
 	for rows.Next() {
 		var tableName, tableType string
 		err = rows.Scan(&tableName, &tableType)
@@ -39,17 +43,14 @@ func TruncateAllTables() {
 			log.Fatalf("failed to show tables: %v", err)
 		}
 
-		sqls := []string{
-			"SET FOREIGN_KEY_CHECKS = 0",
-			fmt.Sprintf("TRUNCATE `%s`", tableName),
-			"SET FOREIGN_KEY_CHECKS = 1",
+		truncateSQL := fmt.Sprintf("truncate `%s`", tableName)
+		if _, err := db.Exec(truncateSQL); err != nil {
+			log.Fatalf("failed to truncate table: %v", err)
 		}
+	}
 
-		for _, sql := range sqls {
-			if _, err := db.Exec(sql); err != nil {
-				log.Fatalf("failed to truncate table: %#v", err)
-			}
-		}
+	if _, err := db.Exec("set foreign_key_checks = 1"); err != nil {
+		log.Fatalf("failed to enable foreign_key_checks: %v", err)
 	}
 
 	if rows.Err() != nil {
